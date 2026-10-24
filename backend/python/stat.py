@@ -38,22 +38,49 @@ bearishEnabled = settings["bearish"]
 
 # -------------------------------
 # LOAD CSV
-# -------------------------------
+try:
+    data = pd.read_csv(csv_path)
+except Exception as error:
+    raise ValueError(f"Could not read the CSV file: {error}") from error
 
-data = pd.read_csv(csv_path)
+data.columns = data.columns.astype(str).str.strip()
+columns_by_name = {column.lower(): column for column in data.columns}
+time_column = next(
+    (columns_by_name[name] for name in ("time (eet)", "time", "datetime", "timestamp", "date") if name in columns_by_name),
+    None,
+)
+if time_column is None:
+    raise ValueError("CSV needs a timestamp column named Time, Time (EET), Date, Datetime, or Timestamp.")
 
-data.columns = data.columns.str.strip()
-data.rename(columns={'Time (EET)': 'Time'}, inplace=True)
+rename_columns = {time_column: "Time"}
+for required_column in ("Open", "High", "Low", "Close"):
+    source_column = columns_by_name.get(required_column.lower())
+    if source_column is not None:
+        rename_columns[source_column] = required_column
 
-data['Time'] = pd.to_datetime(data['Time'])
-data.set_index('Time', inplace=True)
+data.rename(columns=rename_columns, inplace=True)
+missing_columns = [column for column in ("Time", "Open", "High", "Low", "Close") if column not in data.columns]
+if missing_columns:
+    raise ValueError(f"CSV is missing required columns: {', '.join(missing_columns)}.")
 
-data = data[['Open', 'High', 'Low', 'Close', 'Volume']]
+if "Volume" not in data.columns:
+    data["Volume"] = 0
 
-# -------------------------------
+timestamps = pd.to_datetime(data["Time"], errors="coerce")
+if timestamps.isna().any():
+    raise ValueError("Some values in the CSV timestamp column could not be parsed.")
+if timestamps.dt.tz is None:
+    timestamps = timestamps.dt.tz_localize("Europe/Helsinki", ambiguous="infer", nonexistent="shift_forward")
+else:
+    timestamps = timestamps.dt.tz_convert("Europe/Helsinki")
+
+data["Time"] = timestamps
+data.set_index("Time", inplace=True)
+data = data[["Open", "High", "Low", "Close", "Volume"]]
+
 # 2. TIMEZONE FIX
 # -------------------------------
-data = data.tz_localize('Europe/Helsinki').tz_convert('Europe/London')
+data = data.tz_convert("Europe/London")
 
 data['Hour'] = data.index.hour
 data['Date'] = data.index.date
@@ -167,6 +194,11 @@ for start, end, direction in blocks:
     if trade_count_per_day[date] >= 2:
         continue
 
+    if direction == "bullish" and not bullishEnabled:
+        continue
+    if direction == "bearish" and not bearishEnabled:
+        continue
+
     entry, sl, tp, level_0618 = fib_levels(data, start, end, direction)
     last_direction, last_entry, last_sl, last_tp = direction, entry, sl, tp
 
@@ -259,10 +291,10 @@ win_rate = (wins / total_trades) * 100 if total_trades > 0 else 0
 net_profit = sum(trades)
 
 output = {
-    "signal": "BUY",
-    "entry": entry,
-    "stopLoss": sl,
-    "target": tp,
+    "signal": last_direction.upper() if last_direction else "NO SIGNAL",
+    "entry": last_entry,
+    "stopLoss": last_sl,
+    "target": last_tp,
     "accuracy": round(win_rate, 2),
     "wins": wins,
     "losses": losses,

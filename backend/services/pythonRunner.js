@@ -23,23 +23,21 @@ function runPython(csvPath, settings) {
             error += data.toString();
         });
 
+        python.on("error", (spawnError) => {
+            reject(new Error(`Could not start Python (${spawnError.message}). Install Python 3 and make sure it is available on PATH.`));
+        });
+
         python.on("close", (code) => {
 
             if (code !== 0) {
-                return reject(error);
+                return reject(new Error(error.trim() || `Python exited with status ${code}.`));
             }
 
             try {
 
-                            console.log("===== RAW PYTHON OUTPUT =====");
-                console.log(result);
-                console.log("=============================");
-
-resolve(JSON.parse(result));
+                resolve(JSON.parse(result));
             } catch (err) {
-
-                reject(err);
-
+                reject(new Error(`Python returned invalid result data: ${err.message}`));
             }
 
         });

@@ -1,24 +1,23 @@
 const multer = require("multer");
 const path = require("path");
+const fs = require("fs");
+const crypto = require("crypto");
+
+const uploadsDirectory = path.resolve(__dirname, "../uploads");
+fs.mkdirSync(uploadsDirectory, { recursive: true });
 
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "uploads/");
-  },
-
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname));
-  },
+  destination: (_req, _file, cb) => cb(null, uploadsDirectory),
+  filename: (_req, _file, cb) => cb(null, `${crypto.randomUUID()}.csv`),
 });
 
 const upload = multer({
-  storage: storage,
-
-  fileFilter: (req, file, cb) => {
-    if (path.extname(file.originalname) !== ".csv") {
-      return cb(new Error("Only CSV files are allowed"));
+  storage,
+  limits: { fileSize: 25 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    if (path.extname(file.originalname).toLowerCase() !== ".csv") {
+      return cb(new Error("Choose a .csv file."));
     }
-
     cb(null, true);
   },
 });

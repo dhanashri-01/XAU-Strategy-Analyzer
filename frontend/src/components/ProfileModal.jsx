@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { LogOut, UserCircle, X, Pencil, Check, Camera } from "lucide-react";
 import { updateProfile } from "firebase/auth";
+import api from "../services/api";
 
 import { useAuth } from "../context/AuthContext";
 
@@ -75,27 +76,10 @@ function ProfileModal({ onClose }) {
     }
 
     try {
-      const idToken = await user.getIdToken();
-
       const formData = new FormData();
       formData.append("photo", file);
-
-      const response = await fetch(
-        "http://localhost:5000/api/users/profile-photo",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${idToken}`,
-          },
-          body: formData,
-        },
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Profile photo upload failed");
-      }
+      const response = await api.post("/users/profile-photo", formData);
+      const data = response.data;
 
       await updateProfile(user, {
         photoURL: data.photoURL,

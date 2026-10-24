@@ -1,32 +1,21 @@
 # XAU Strategy Analyzer
 
-A React dashboard and Express API for backtesting an XAUUSD strategy against candle data. The app provides Firebase sign-in, per-user saved run history, analytics, and an embedded TradingView chart. It supports light and dark themes.
+A React dashboard and Express API for running XAUUSD strategy backtests on candle CSV data. Backtests can run without an account. Firebase sign-in and MongoDB are used to save and view per-user history.
 
 ## Requirements
 
-- Node.js and npm
-- Python 3 and pip
-- MongoDB running locally or a reachable MongoDB instance
-- Firebase project credentials for web sign-in and Admin token verification
-- Cloudinary credentials for profile photo uploads
+- Node.js 20.19+ or 22.12+ and npm (required by the current Vite release)
+- Python 3.9+ and pip
+- A Firebase project only if you want sign-in and saved run history
+- MongoDB only if you want saved run history
 
-## Getting started
+Cloudinary is only needed for profile photo uploads. The TradingView widget needs an internet connection.
 
-Run the frontend and backend in separate terminals from the project root.
+## Start locally
 
-### 1. Configure environment
+Open two terminals in the project directory.
 
-Copy `frontend/.env.example` to `frontend/.env` and fill in the Firebase web app values.
-
-Copy `backend/.env.example` to `backend/.env`. Set `MONGO_URI`; add the Cloudinary values if you want profile photo uploads.
-
-Place a Firebase Admin service account JSON file at `backend/config/firebaseServiceAccount.json`. This credential file is ignored by Git and must not be committed. Enable Email/Password and Google sign-in providers in Firebase Authentication.
-
-### 2. Start MongoDB
-
-Start your local MongoDB service, or set `MONGO_URI` to your database connection string.
-
-### 3. Install and start the backend
+### 1. Start the backend
 
 ```powershell
 cd backend
@@ -35,11 +24,11 @@ python -m pip install -r python/requirements.txt
 npm run dev
 ```
 
-The API starts at `http://localhost:5000`.
+The API listens on `http://localhost:5000`. On Windows, if `python` is not the Python 3 launcher on your system, use `py -3 -m pip install -r python/requirements.txt`; the server still needs a `python` command available on `PATH` to run backtests.
 
-### 4. Install and start the frontend
+Strategy runs work without MongoDB or Firebase. To enable sign-in and saved history, configure `MONGO_URI` in `backend/.env` and provide Firebase Admin credentials at `backend/config/firebaseServiceAccount.json`. The JSON key is a private credential and must not be committed. Enable Email/Password and Google sign-in in Firebase Authentication. Cloudinary values in `backend/.env` are optional and only used by profile photo uploads.
 
-In a second terminal:
+### 2. Start the frontend
 
 ```powershell
 cd frontend
@@ -49,38 +38,31 @@ npm run dev
 
 Open the local URL printed by Vite, usually `http://localhost:5173`.
 
-## Using the app
+For Firebase sign-in, create `frontend/.env` with the web app values from Firebase:
 
-1. Sign in with Firebase from the header.
-2. Open **Strategy Builder**, select a candle-data CSV, and upload it.
-3. Run the backtest. Signed-in runs are saved to MongoDB under the current Firebase user.
-4. Review results on the dashboard, analytics, and history pages.
-
-The CSV needs these columns: `Time (EET)`, `Open`, `High`, `Low`, `Close`, and `Volume`. The strategy script also accepts `Time` in place of `Time (EET)`. Timestamps should be parseable by pandas.
-
-## Project structure
-
-```text
-backend/
-  config/       MongoDB, Firebase Admin, and Cloudinary setup
-  controllers/  API request handlers
-  middlewares/  Authentication and file upload middleware
-  models/       MongoDB user and history models
-  python/       Backtest script and Python requirements
-  routes/       Express API routes
-  services/     Python process runner
-  uploads/      Local CSV uploads (ignored by Git)
-frontend/
-  src/components/  Reusable UI and charts
-  src/context/     Authentication, theme, and backtest state
-  src/layouts/     Shared application layout
-  src/pages/       Dashboard, strategy, analytics, and history screens
-  src/services/    API client
+```dotenv
+VITE_FIREBASE_API_KEY=your-api-key
+VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=your-project-id
+VITE_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
+VITE_FIREBASE_MESSAGING_SENDER_ID=your-sender-id
+VITE_FIREBASE_APP_ID=your-app-id
 ```
+
+The API defaults to `http://localhost:5000/api`. Set `VITE_API_URL` in `frontend/.env` if your backend uses a different address. Restart Vite after changing environment variables.
+
+## Run a strategy
+
+1. Open **Strategy Builder**. Sign-in is optional.
+2. Select a candle data CSV and choose **Upload CSV**.
+3. Configure the strategy and choose **Run Strategy**.
+4. Sign in if you want the results saved to your account’s history.
+
+The CSV must contain timestamp, `Open`, `High`, `Low`, and `Close` columns. Supported timestamp names include `Time (EET)`, `Time`, `Date`, `Datetime`, and `Timestamp`. `Volume` is optional. Timestamps must be parseable by pandas; timestamps without a timezone are interpreted as Europe/Helsinki time. CSV uploads are limited to 25 MB and stored under `backend/uploads/`.
 
 ## Useful commands
 
-Frontend commands run from `frontend/`:
+Run these from `frontend/`:
 
 ```sh
 npm run dev
@@ -89,16 +71,31 @@ npm run lint
 npm run preview
 ```
 
-Backend commands run from `backend/`:
+Run these from `backend/`:
 
 ```sh
 npm run dev
 npm start
 ```
 
-## Configuration notes
+## Project layout
 
-- The frontend API client currently targets `http://localhost:5000/api`.
-- Firebase web configuration belongs in `frontend/.env`; Firebase Admin credentials belong in the ignored service-account JSON file.
-- Profile image uploads use Cloudinary. Strategy CSV uploads are stored locally under `backend/uploads/`.
-- Do not commit `.env` files, service-account keys, uploaded CSVs, `node_modules/`, or build output.
+```text
+backend/
+  config/       MongoDB, Firebase Admin, and Cloudinary setup
+  controllers/  API request handlers
+  middlewares/  Authentication and upload handling
+  models/       MongoDB user and backtest history models
+  python/       Backtest implementation and Python requirements
+  routes/       API endpoints
+  services/     Python process runner
+  uploads/      Local CSV uploads (ignored by Git)
+frontend/
+  src/components/  Dashboard and reusable UI components
+  src/context/     Authentication, theme, and backtest state
+  src/layouts/     Shared application layout
+  src/pages/       Dashboard, strategy, analytics, and history screens
+  src/services/    API client
+```
+
+Do not commit `.env` files, Firebase service account keys, uploaded CSVs, `node_modules/`, or build output.

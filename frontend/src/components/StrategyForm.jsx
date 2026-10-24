@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Play, Upload } from "lucide-react";
 import api from "../services/api";
 import { useBacktest } from "../context/BacktestContext";
-import { useAuth } from "../context/AuthContext";
 function StrategyForm() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
@@ -11,7 +10,6 @@ function StrategyForm() {
   const [uploading, setUploading] = useState(false);
   const [notice, setNotice] = useState("");
   const { setBacktest } = useBacktest();
-  const { user } = useAuth();
   const [strategy, setStrategy] = useState({
     fastEMA: 50,
     slowEMA: 200,
@@ -44,7 +42,7 @@ function StrategyForm() {
   };
   const uploadCSV = async () => {
   if (!csvFile) {
-    setNotice("Choose a CSV file before uploading.");
+    setNotice("Choose a CSV file (.csv, up to 25 MB).");
     return;
   }
 
@@ -54,28 +52,20 @@ function StrategyForm() {
     const formData = new FormData();
     formData.append("csv", csvFile);
 
-    const response = await api.post("/strategy/upload", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
+    const response = await api.post("/strategy/upload", formData);
 
     setCsvPath(response.data.filepath);
     setNotice(`${csvFile.name} uploaded successfully.`);
 
   } catch (err) {
     console.error(err);
-    setNotice("CSV upload failed. Please try again.");
+    setNotice(err.response?.data?.message || err.response?.data?.error || err.message || "CSV upload failed. Please try again.");
   } finally {
     setUploading(false);
   }
 };
   const runStrategy = async () => {
     try {
-        if (!user) {
-          setNotice("Sign in before running a strategy. Results are saved to your account.");
-          return;
-        }
         setLoading(true);
 
         if (!csvPath) {
@@ -90,11 +80,12 @@ function StrategyForm() {
   });
 
     setResult(response.data);
+    setNotice(response.data.historyMessage || (response.data.historySaved ? "Backtest completed and saved to your history." : "Backtest completed. Sign in to save this run to your history."));
 
     setBacktest({ ...response.data, rr: strategy.rr });
     } catch (error) {
       console.error(error);
-      setNotice("The backtest could not be completed. Check your connection and try again.");
+      setNotice(error.response?.data?.message || error.response?.data?.error || error.message || "The backtest could not be completed. Check your connection and try again.");
     } finally {
       setLoading(false);
     }
@@ -106,7 +97,7 @@ function StrategyForm() {
       <h2 className="mb-2 text-xl font-semibold text-white sm:text-2xl">
         Strategy Builder
       </h2>
-      <p className="mb-7 text-sm text-slate-400">Choose your backtest settings and upload candle data to get started.</p>
+      <p className="mb-7 text-sm text-slate-400">Choose your settings and upload candle data. Sign-in is optional; sign in only if you want to save the run to your history.</p>
 
       {/* EMA */}
 

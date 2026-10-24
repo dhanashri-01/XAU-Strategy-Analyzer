@@ -5,6 +5,7 @@ import {
 } from "firebase/auth";
 
 import { auth } from "../firebase";
+import api from "../services/api";
 
 const AuthContext = createContext();
 
@@ -23,19 +24,14 @@ export function AuthProvider({ children }) {
           try {
             const idToken = await currentUser.getIdToken();
 
-            await fetch("http://localhost:5000/api/users/me", {
-              method: "GET",
-              headers: {
-                Authorization: `Bearer ${idToken}`
-              }
+            const response = await api.get("/users/me", {
+              headers: { Authorization: `Bearer ${idToken}` },
             });
-
-            console.log("User synced with MongoDB");
+            if (!response.data?.success) {
+              throw new Error("The account could not be synced with the API.");
+            }
           } catch (error) {
-            console.error(
-              "Failed to sync user with MongoDB:",
-              error
-            );
+            console.error("Failed to sync user with the API:", error);
           }
         }
       }
