@@ -5,9 +5,9 @@ function Strategy() {
   return (
     <MainLayout>
 
-      <div className="mb-8">
+      <div className="mb-6 sm:mb-8">
 
-        <h1 className="text-4xl font-bold text-white">
+        <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">
           Strategy Builder
         </h1>
 

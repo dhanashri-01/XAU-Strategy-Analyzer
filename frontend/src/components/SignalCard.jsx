@@ -1,102 +1,100 @@
-import { TrendingUp } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, Activity } from "lucide-react";
+import { useBacktest } from "../context/BacktestContext";
 
 function SignalCard() {
+  const { backtest } = useBacktest();
+  const isBuy = backtest?.signal === "BUY";
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-lg">
+    <section aria-labelledby="signal-heading" className="metric-card rounded-2xl border border-slate-800 bg-gradient-to-br from-slate-900 to-slate-900/60 p-5 shadow-lg sm:p-6">
 
       <div className="flex justify-between">
 
-        <h2 className="text-xl font-semibold text-white">
+        <h2 id="signal-heading" className="text-lg font-semibold text-white">
 
           Current Signal
 
         </h2>
 
-        <TrendingUp
-          className="text-green-500"
-        />
+        <Activity className="text-emerald-400" aria-hidden="true" />
 
       </div>
 
-      <div className="mt-8">
-
-        <div className="bg-green-600 px-5 py-2 rounded-xl inline-block">
-
-          BUY
-
-        </div>
-
+      {backtest ? <>
+      <div className={`mt-6 inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold ${isBuy ? "bg-emerald-400/10 text-emerald-300" : "bg-rose-400/10 text-rose-300"}`}>
+        {isBuy ? <ArrowUpRight size={18} aria-hidden="true" /> : <ArrowDownRight size={18} aria-hidden="true" />}
+        {backtest.signal || "No signal"}
       </div>
 
-      <div className="space-y-6 mt-8">
+      <dl className="mt-6 grid grid-cols-2 gap-x-4 gap-y-5">
 
         <div>
 
-          <p className="text-slate-400 text-sm">
+          <dt className="text-slate-400 text-sm">
 
             Entry
 
-          </p>
+          </dt>
 
-          <h2 className="text-white text-xl font-bold">
+          <dd className="mt-1 text-lg font-semibold text-white sm:text-xl">
 
-            3378.20
+            {backtest.entry ?? "-"}
 
-          </h2>
+          </dd>
 
         </div>
 
         <div>
 
-          <p className="text-slate-400 text-sm">
+          <dt className="text-slate-400 text-sm">
 
             Stop Loss
 
-          </p>
+          </dt>
 
-          <h2 className="text-red-400 text-xl font-bold">
+          <dd className="mt-1 text-lg font-semibold text-rose-300 sm:text-xl">
 
-            3375.80
+            {backtest.stopLoss ?? "-"}
 
-          </h2>
+          </dd>
 
         </div>
 
         <div>
 
-          <p className="text-slate-400 text-sm">
+          <dt className="text-slate-400 text-sm">
 
             Target
 
-          </p>
+          </dt>
 
-          <h2 className="text-green-400 text-xl font-bold">
+          <dd className="mt-1 text-lg font-semibold text-emerald-300 sm:text-xl">
 
-            3383.00
+            {backtest.target ?? "-"}
 
-          </h2>
+          </dd>
 
         </div>
 
         <div>
 
-          <p className="text-slate-400 text-sm">
+          <dt className="text-slate-400 text-sm">
 
             Risk Reward
 
-          </p>
+          </dt>
 
-          <h2 className="text-blue-400 text-xl font-bold">
+          <dd className="mt-1 text-lg font-semibold text-sky-300 sm:text-xl">
 
-            1 : 2
+            {backtest.rr ?? "-"}
 
-          </h2>
+          </dd>
 
         </div>
 
-      </div>
+      </dl>
+      </> : <p className="mt-6 rounded-xl border border-dashed border-slate-700 p-4 text-sm leading-6 text-slate-400">Run a backtest to see its signal, entry, stop loss, and target here.</p>}
 
-    </div>
+    </section>
   );
 }
 

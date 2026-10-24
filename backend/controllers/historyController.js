@@ -4,7 +4,7 @@ const getHistory = async (req, res) => {
 
   try {
 
-    const history = await History.find().sort({
+    const history = await History.find({ userId: req.user.uid }).sort({
       createdAt: -1,
     });
 

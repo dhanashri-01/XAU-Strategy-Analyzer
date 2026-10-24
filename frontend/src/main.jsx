@@ -6,13 +6,19 @@ import App from "./App";
 import "./index.css";
 
 import { BacktestProvider } from "./context/BacktestContext";
+import { AuthProvider } from "./context/AuthContext";
+import { ThemeProvider } from "./context/ThemeContext";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <BrowserRouter>
-      <BacktestProvider>
-        <App />
-      </BacktestProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <BacktestProvider>
+            <App />
+          </BacktestProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </BrowserRouter>
   </StrictMode>
 );

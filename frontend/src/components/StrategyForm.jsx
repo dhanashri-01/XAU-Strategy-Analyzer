@@ -2,12 +2,16 @@ import { useState } from "react";
 import { Play, Upload } from "lucide-react";
 import api from "../services/api";
 import { useBacktest } from "../context/BacktestContext";
+import { useAuth } from "../context/AuthContext";
 function StrategyForm() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [csvFile, setCsvFile] = useState(null);
   const [csvPath, setCsvPath] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [notice, setNotice] = useState("");
   const { setBacktest } = useBacktest();
+  const { user } = useAuth();
   const [strategy, setStrategy] = useState({
     fastEMA: 50,
     slowEMA: 200,
@@ -40,11 +44,13 @@ function StrategyForm() {
   };
   const uploadCSV = async () => {
   if (!csvFile) {
-    alert("Please select a CSV file.");
+    setNotice("Choose a CSV file before uploading.");
     return;
   }
 
   try {
+    setUploading(true);
+    setNotice("");
     const formData = new FormData();
     formData.append("csv", csvFile);
 
@@ -55,20 +61,25 @@ function StrategyForm() {
     });
 
     setCsvPath(response.data.filepath);
-
-    alert("CSV Uploaded Successfully!");
+    setNotice(`${csvFile.name} uploaded successfully.`);
 
   } catch (err) {
     console.error(err);
-    alert("CSV Upload Failed");
+    setNotice("CSV upload failed. Please try again.");
+  } finally {
+    setUploading(false);
   }
 };
   const runStrategy = async () => {
     try {
+        if (!user) {
+          setNotice("Sign in before running a strategy. Results are saved to your account.");
+          return;
+        }
         setLoading(true);
 
         if (!csvPath) {
-    alert("Please upload the CSV first.");
+    setNotice("Upload a CSV file before running the strategy.");
     setLoading(false);
     return;
   }
@@ -80,51 +91,54 @@ function StrategyForm() {
 
     setResult(response.data);
 
-    setBacktest(response.data);
+    setBacktest({ ...response.data, rr: strategy.rr });
     } catch (error) {
       console.error(error);
-      alert("Backend Error");
+      setNotice("The backtest could not be completed. Check your connection and try again.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="bg-slate-900 rounded-2xl border border-slate-800 p-8">
+    <div className="rounded-2xl border border-slate-800 bg-gradient-to-br from-slate-900 to-slate-900/70 p-4 shadow-xl shadow-black/10 sm:p-6 lg:p-8">
 
-      <h2 className="text-2xl text-white font-semibold mb-8">
+      <h2 className="mb-2 text-xl font-semibold text-white sm:text-2xl">
         Strategy Builder
       </h2>
+      <p className="mb-7 text-sm text-slate-400">Choose your backtest settings and upload candle data to get started.</p>
 
       {/* EMA */}
 
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6">
 
         <div>
-          <label className="block text-slate-300 mb-2">
+          <label htmlFor="fastEMA" className="mb-2 block text-sm text-slate-300">
             Fast EMA
           </label>
 
           <input
             type="number"
+            id="fastEMA"
             name="fastEMA"
             value={strategy.fastEMA}
             onChange={handleChange}
-            className="w-full bg-slate-800 text-white rounded-lg p-3"
+            className="w-full rounded-lg border border-slate-700 bg-slate-950/70 p-3 text-white focus:border-emerald-400 focus:outline-none"
           />
         </div>
 
         <div>
-          <label className="block text-slate-300 mb-2">
+          <label htmlFor="slowEMA" className="mb-2 block text-sm text-slate-300">
             Slow EMA
           </label>
 
           <input
             type="number"
+            id="slowEMA"
             name="slowEMA"
             value={strategy.slowEMA}
             onChange={handleChange}
-            className="w-full bg-slate-800 text-white rounded-lg p-3"
+            className="w-full rounded-lg border border-slate-700 bg-slate-950/70 p-3 text-white focus:border-emerald-400 focus:outline-none"
           />
         </div>
 
@@ -132,33 +146,35 @@ function StrategyForm() {
 
       {/* Session */}
 
-      <div className="grid grid-cols-2 gap-6 mt-8">
+      <div className="mt-7 grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6">
 
         <div>
-          <label className="block text-slate-300 mb-2">
+          <label htmlFor="londonStart" className="mb-2 block text-sm text-slate-300">
             London Start
           </label>
 
           <input
             type="time"
+            id="londonStart"
             name="londonStart"
             value={strategy.londonStart}
             onChange={handleChange}
-            className="w-full bg-slate-800 text-white rounded-lg p-3"
+            className="w-full rounded-lg border border-slate-700 bg-slate-950/70 p-3 text-white focus:border-emerald-400 focus:outline-none"
           />
         </div>
 
         <div>
-          <label className="block text-slate-300 mb-2">
+          <label htmlFor="londonEnd" className="mb-2 block text-sm text-slate-300">
             London End
           </label>
 
           <input
             type="time"
+            id="londonEnd"
             name="londonEnd"
             value={strategy.londonEnd}
             onChange={handleChange}
-            className="w-full bg-slate-800 text-white rounded-lg p-3"
+            className="w-full rounded-lg border border-slate-700 bg-slate-950/70 p-3 text-white focus:border-emerald-400 focus:outline-none"
           />
         </div>
 
@@ -166,49 +182,52 @@ function StrategyForm() {
 
       {/* Strategy */}
 
-      <div className="grid grid-cols-3 gap-6 mt-8">
+      <div className="mt-7 grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-6">
 
         <div>
-          <label className="block text-slate-300 mb-2">
+          <label htmlFor="minCandles" className="mb-2 block text-sm text-slate-300">
             Min Candles
           </label>
 
           <input
             type="number"
+            id="minCandles"
             name="minCandles"
             value={strategy.minCandles}
             onChange={handleChange}
-            className="w-full bg-slate-800 text-white rounded-lg p-3"
+            className="w-full rounded-lg border border-slate-700 bg-slate-950/70 p-3 text-white focus:border-emerald-400 focus:outline-none"
           />
         </div>
 
         <div>
-          <label className="block text-slate-300 mb-2">
+          <label htmlFor="fibLevel" className="mb-2 block text-sm text-slate-300">
             Fib Level
           </label>
 
           <input
             type="number"
+            id="fibLevel"
             step="0.001"
             name="fibLevel"
             value={strategy.fibLevel}
             onChange={handleChange}
-            className="w-full bg-slate-800 text-white rounded-lg p-3"
+            className="w-full rounded-lg border border-slate-700 bg-slate-950/70 p-3 text-white focus:border-emerald-400 focus:outline-none"
           />
         </div>
 
         <div>
-          <label className="block text-slate-300 mb-2">
+          <label htmlFor="slRatio" className="mb-2 block text-sm text-slate-300">
             SL Ratio
           </label>
 
           <input
             type="number"
+            id="slRatio"
             step="0.001"
             name="slRatio"
             value={strategy.slRatio}
             onChange={handleChange}
-            className="w-full bg-slate-800 text-white rounded-lg p-3"
+            className="w-full rounded-lg border border-slate-700 bg-slate-950/70 p-3 text-white focus:border-emerald-400 focus:outline-none"
           />
         </div>
 
@@ -216,83 +235,112 @@ function StrategyForm() {
 
       {/* Filters */}
 
-      <div className="grid grid-cols-2 gap-4 mt-8 text-white">
+      <fieldset className="mt-7 grid grid-cols-1 gap-3 text-sm text-white sm:grid-cols-2">
+        <legend className="mb-3 text-sm font-medium text-slate-300">Strategy filters</legend>
 
-        <label>
+        <label className="flex min-h-12 items-center gap-3 rounded-xl border border-slate-800 bg-slate-950/40 px-4">
           <input
             type="checkbox"
+            className="size-4 accent-emerald-400"
             name="trendFilter"
             checked={strategy.trendFilter}
             onChange={handleChange}
           />
-          <span className="ml-2">EMA Filter</span>
+          <span>EMA filter</span>
         </label>
 
-        <label>
+        <label className="flex min-h-12 items-center gap-3 rounded-xl border border-slate-800 bg-slate-950/40 px-4">
           <input
             type="checkbox"
+            className="size-4 accent-emerald-400"
             name="confirmation"
             checked={strategy.confirmation}
             onChange={handleChange}
           />
-          <span className="ml-2">Confirmation Candle</span>
+          <span>Confirmation candle</span>
         </label>
 
-        <label>
+        <label className="flex min-h-12 items-center gap-3 rounded-xl border border-slate-800 bg-slate-950/40 px-4">
           <input
             type="checkbox"
+            className="size-4 accent-emerald-400"
             name="fib618"
             checked={strategy.fib618}
             onChange={handleChange}
           />
-          <span className="ml-2">0.618 Filter</span>
+          <span>0.618 filter</span>
         </label>
 
-        <label>
+        <label className="flex min-h-12 items-center gap-3 rounded-xl border border-slate-800 bg-slate-950/40 px-4">
           <input
             type="checkbox"
+            className="size-4 accent-emerald-400"
             name="bullish"
             checked={strategy.bullish}
             onChange={handleChange}
           />
-          <span className="ml-2">Bullish Blocks</span>
+          <span>Bullish blocks</span>
         </label>
 
-      </div>
+        <label className="flex min-h-12 items-center gap-3 rounded-xl border border-slate-800 bg-slate-950/40 px-4">
+          <input
+            type="checkbox"
+            className="size-4 accent-emerald-400"
+            name="bearish"
+            checked={strategy.bearish}
+            onChange={handleChange}
+          />
+          <span>Bearish blocks</span>
+        </label>
+
+      </fieldset>
 
       {/* Buttons */}
 
-      <div className="flex gap-4 mt-10">
+      <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-end">
 
         <button
           onClick={runStrategy}
-          className="flex items-center gap-2 bg-green-600 hover:bg-green-700 px-6 py-3 rounded-lg text-white"
+          disabled={loading}
+          aria-busy={loading}
+          className="flex min-h-12 items-center justify-center gap-2 rounded-lg bg-emerald-500 px-6 py-3 font-semibold text-slate-950 transition hover:bg-emerald-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 disabled:cursor-wait disabled:opacity-60 sm:w-auto"
         >
           <Play size={18} />
           Run Strategy
         </button>
 
-        <div className="flex flex-col gap-3">
+        <div className="flex min-w-0 flex-col gap-2 sm:flex-1">
 
+  <label htmlFor="csv-file" className="text-sm font-medium text-slate-300">Market data file</label>
   <input
     type="file"
+    id="csv-file"
     accept=".csv"
-    onChange={(e) => setCsvFile(e.target.files[0])}
-    className="text-white"
+    aria-describedby="csv-help csv-status"
+    onChange={(e) => {
+      setCsvFile(e.target.files[0] || null);
+      setCsvPath("");
+      setNotice("");
+    }}
+    className="w-full rounded-lg border border-slate-700 bg-slate-950/70 p-2 text-sm text-slate-300 file:mr-3 file:rounded-md file:border-0 file:bg-slate-800 file:px-3 file:py-2 file:text-slate-100"
   />
+  <span id="csv-help" className="text-xs text-slate-500">Select a CSV file with your candle data.</span>
+  <span id="csv-status" role="status" aria-live="polite" className={notice ? "text-sm text-amber-200" : "sr-only"}>{notice}</span>
 
   <button
     onClick={uploadCSV}
-    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-lg text-white"
+    disabled={uploading}
+    aria-busy={uploading}
+    className="flex min-h-12 items-center justify-center gap-2 rounded-lg border border-slate-600 bg-slate-800 px-5 py-3 font-medium text-white transition hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 disabled:opacity-60"
   >
     <Upload size={18} />
-    Upload CSV
+    {uploading ? "Uploading..." : "Upload CSV"}
   </button>
 
 </div>
 {csvPath && (
-  <p className="text-green-400 mt-2">
-    CSV Uploaded Successfully
+  <p role="status" className="mt-2 text-sm text-emerald-300">
+    CSV ready to run
   </p>
 )}
       </div>
@@ -300,7 +348,7 @@ function StrategyForm() {
       {/* Loading */}
 
       {loading && (
-        <div className="mt-6 text-blue-400">
+        <div className="mt-6 text-sky-300" role="status" aria-live="polite">
           Running Strategy...
         </div>
       )}
@@ -308,57 +356,57 @@ function StrategyForm() {
       {/* Result */}
 
       {result && (
-        <div className="mt-8 bg-slate-800 rounded-xl p-6">
+        <section aria-labelledby="result-heading" className="mt-8 rounded-xl border border-slate-700 bg-slate-800/70 p-4 sm:p-6">
 
-          <h2 className="text-2xl font-bold text-white mb-6">
+          <h3 id="result-heading" className="mb-6 text-xl font-semibold text-white sm:text-2xl">
             Strategy Result
-          </h2>
+          </h3>
 
-          <div className="grid grid-cols-2 gap-6 text-white">
+          <dl className="grid grid-cols-2 gap-4 text-white sm:gap-6">
 
             <div>
-              <p className="text-slate-400">Signal</p>
-              <h3 className="text-green-400 text-xl">{result.signal}</h3>
+              <dt className="text-sm text-slate-400">Signal</dt>
+              <dd className="text-lg font-semibold text-emerald-300">{result.signal}</dd>
             </div>
 
             <div>
-              <p className="text-slate-400">Entry</p>
-              <h3>{result.entry}</h3>
+              <dt className="text-sm text-slate-400">Entry</dt>
+              <dd>{result.entry}</dd>
             </div>
 
             <div>
-              <p className="text-slate-400">Stop Loss</p>
-              <h3 className="text-red-400">{result.stopLoss}</h3>
+              <dt className="text-sm text-slate-400">Stop Loss</dt>
+              <dd className="text-rose-300">{result.stopLoss}</dd>
             </div>
 
             <div>
-              <p className="text-slate-400">Target</p>
-              <h3 className="text-green-400">{result.target}</h3>
+              <dt className="text-sm text-slate-400">Target</dt>
+              <dd className="text-emerald-300">{result.target}</dd>
             </div>
 
             <div>
-              <p className="text-slate-400">Accuracy</p>
-              <h3>{result.accuracy}%</h3>
+              <dt className="text-sm text-slate-400">Accuracy</dt>
+              <dd>{result.accuracy}%</dd>
             </div>
 
             <div>
-              <p className="text-slate-400">Trades</p>
-              <h3>{result.trades}</h3>
+              <dt className="text-sm text-slate-400">Trades</dt>
+              <dd>{result.trades}</dd>
             </div>
 
             <div>
-              <p className="text-slate-400">Wins</p>
-              <h3 className="text-green-400">{result.wins}</h3>
+              <dt className="text-sm text-slate-400">Wins</dt>
+              <dd className="text-emerald-300">{result.wins}</dd>
             </div>
 
             <div>
-              <p className="text-slate-400">Losses</p>
-              <h3 className="text-red-400">{result.losses}</h3>
+              <dt className="text-sm text-slate-400">Losses</dt>
+              <dd className="text-rose-300">{result.losses}</dd>
             </div>
 
-          </div>
+          </dl>
 
-        </div>
+        </section>
       )}
 
     </div>

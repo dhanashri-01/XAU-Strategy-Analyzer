@@ -7,13 +7,16 @@ function History() {
 
         <MainLayout>
 
-            <div className="space-y-8">
+            <div className="space-y-6 sm:space-y-8">
 
-                <h1 className="text-4xl font-bold text-white">
+                <div>
+                <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">
 
                     History
 
                 </h1>
+                <p className="mt-2 text-sm text-slate-400">Saved results from your strategy tests.</p>
+                </div>
 
                 <HistoryTable />
 

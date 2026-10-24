@@ -3,6 +3,7 @@ const express = require("express");
 const router = express.Router();
 
 const upload = require("../middlewares/upload");
+const verifyFirebaseToken = require("../middlewares/authMiddleware");
 
 const {
 
@@ -31,6 +32,8 @@ router.post(
 router.post(
 
     "/run",
+
+    verifyFirebaseToken,
 
     runStrategy
 

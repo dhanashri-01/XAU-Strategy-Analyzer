@@ -14,7 +14,7 @@ function AnalyticsCards() {
 
   if (!backtest) {
     return (
-      <div className="bg-slate-900 rounded-xl p-10 text-center text-slate-400">
+      <div className="rounded-2xl border border-dashed border-slate-700 bg-slate-900 p-8 text-center text-slate-400 sm:p-10" role="status">
         Run a strategy first to view analytics.
       </div>
     );
@@ -54,11 +54,11 @@ function AnalyticsCards() {
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-6">
+    <section aria-label="Backtest performance metrics" className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5 xl:gap-5">
       {stats.map((item, index) => (
         <div
           key={index}
-          className="bg-slate-900 border border-slate-800 rounded-2xl p-6"
+          className="metric-card rounded-2xl border border-slate-800 bg-slate-900 p-4 sm:p-5"
         >
           <div className="flex justify-between items-center">
 
@@ -68,20 +68,20 @@ function AnalyticsCards() {
                 {item.title}
               </p>
 
-              <h2 className="text-3xl font-bold text-white mt-2">
+              <p className="mt-2 text-2xl font-semibold text-white sm:text-3xl">
                 {item.value}
-              </h2>
+              </p>
 
             </div>
 
-            <div className={`text-4xl ${item.color}`}>
-              {item.icon}
+            <div className={`flex size-11 items-center justify-center rounded-xl bg-slate-800 text-2xl ${item.color}`}>
+              <span aria-hidden="true">{item.icon}</span>
             </div>
 
           </div>
         </div>
       ))}
-    </div>
+    </section>
   );
 }
 

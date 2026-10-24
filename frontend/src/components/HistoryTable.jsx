@@ -1,13 +1,17 @@
 import { useEffect, useState } from "react";
 import api from "../services/api";
+import { useAuth } from "../context/AuthContext";
 
 function HistoryTable() {
 
   const [history, setHistory] = useState([]);
+  const [error, setError] = useState("");
+  const { user, loading } = useAuth();
 
   useEffect(() => {
-    fetchHistory();
-  }, []);
+    if (user) fetchHistory();
+    else setHistory([]);
+  }, [user]);
 
   const fetchHistory = async () => {
     try {
@@ -15,32 +19,47 @@ function HistoryTable() {
       const res = await api.get("/history");
 
       setHistory(res.data);
+      setError("");
 
     } catch (err) {
 
       console.error(err);
+      setError("Could not load your strategy history. Please try again.");
 
     }
   };
 
   return (
 
-    <div className="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden">
+    <section aria-label="Your strategy run history" className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900">
 
-      <table className="w-full">
+      {loading ? (
+        <p className="p-6 text-slate-300">Loading account...</p>
+      ) : !user ? (
+        <p className="p-6 text-slate-300">Sign in to view your strategy testing history.</p>
+      ) : error ? (
+        <p className="p-6 text-red-400">{error}</p>
+      ) : history.length === 0 ? (
+        <p className="p-6 text-slate-300">No strategy runs saved yet. Run a strategy to build your history.</p>
+      ) : (
+
+      <div className="overflow-x-auto" role="region" aria-label="Strategy history table" tabIndex={0}>
+      <table className="w-full min-w-[760px] text-left">
+
+        <caption className="sr-only">Saved strategy testing runs, newest first</caption>
 
         <thead className="bg-slate-800">
 
           <tr className="text-slate-300">
 
-            <th className="p-4">Date</th>
-            <th className="p-4">Signal</th>
-            <th className="p-4">EMA</th>
-            <th className="p-4">Trades</th>
-            <th className="p-4">Wins</th>
-            <th className="p-4">Losses</th>
-            <th className="p-4">Accuracy</th>
-            <th className="p-4">Net RR</th>
+            <th scope="col" className="p-4">Date</th>
+            <th scope="col" className="p-4">Signal</th>
+            <th scope="col" className="p-4">EMA</th>
+            <th scope="col" className="p-4">Trades</th>
+            <th scope="col" className="p-4">Wins</th>
+            <th scope="col" className="p-4">Losses</th>
+            <th scope="col" className="p-4">Accuracy</th>
+            <th scope="col" className="p-4">Net RR</th>
 
           </tr>
 
@@ -98,8 +117,11 @@ function HistoryTable() {
         </tbody>
 
       </table>
+      </div>
 
-    </div>
+      )}
+
+    </section>
 
   );
 

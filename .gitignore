@@ -1,0 +1,23 @@
+# Dependencies and generated builds
+**/node_modules/
+**/dist/
+**/dist-ssr/
+
+# Local environment and credentials
+**/.env
+**/.env.*
+!**/.env.example
+backend/config/firebaseServiceAccount.json
+
+# Runtime data and Python artifacts
+backend/uploads/*
+!backend/uploads/.gitkeep
+__pycache__/
+*.py[cod]
+.venv/
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

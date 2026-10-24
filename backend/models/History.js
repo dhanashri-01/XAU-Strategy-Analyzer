@@ -2,6 +2,17 @@ const mongoose = require("mongoose");
 
 const HistorySchema = new mongoose.Schema(
   {
+    userId: { type: String, required: true, index: true },
+    slowEMA: Number,
+    londonStart: String,
+    londonEnd: String,
+    newYorkStart: String,
+    newYorkEnd: String,
+    trendFilter: Boolean,
+    confirmation: Boolean,
+    fib618: Boolean,
+    bullish: Boolean,
+    bearish: Boolean,
     fastEMA: Number,
     minCandles: Number,
     fibLevel: Number,

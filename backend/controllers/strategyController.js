@@ -18,8 +18,6 @@ const uploadCSV = async (req, res) => {
 
 // Run Strategy
 const runStrategy = async (req, res) => {
-      console.log("Request Body:");
-    console.log(req.body);
   try {
     const csvPath = req.body.csvPath;
 
@@ -27,7 +25,17 @@ const runStrategy = async (req, res) => {
 
     const result = await runPython(csvPath, settings);
     await History.create({
-
+        userId: req.user.uid,
+        slowEMA: Number(settings.slowEMA),
+        londonStart: settings.londonStart,
+        londonEnd: settings.londonEnd,
+        newYorkStart: settings.newYorkStart,
+        newYorkEnd: settings.newYorkEnd,
+        trendFilter: Boolean(settings.trendFilter),
+        confirmation: Boolean(settings.confirmation),
+        fib618: Boolean(settings.fib618),
+        bullish: Boolean(settings.bullish),
+        bearish: Boolean(settings.bearish),
         fastEMA: Number(settings.fastEMA),
         minCandles: Number(settings.minCandles),
         fibLevel: Number(settings.fibLevel),
