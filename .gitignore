@@ -1,28 +1,26 @@
-# Node
-node_modules/
+# Dependencies and generated builds
+**/node_modules/
+**/dist/
+**/dist-ssr/
+**/build/
 npm-debug.log*
+*.log
 
-# Environment variables
-.env
-.env.*
+# Local environment and credentials
+**/.env
+**/.env.*
+!**/.env.example
+backend/config/firebaseServiceAccount.json
 
-# Build files
-dist/
-build/
-
-# Uploaded CSV files
+# Runtime data and Python artifacts
 backend/uploads/*
-
-# Python cache
+!backend/uploads/.gitkeep
 __pycache__/
-*.pyc
+*.py[cod]
+.venv/
 
-# VS Code
-.vscode/
-
-# OS
+# OS/editor files
 .DS_Store
 Thumbs.db
-
-# Logs
-*.log
+.idea/
+.vscode/
