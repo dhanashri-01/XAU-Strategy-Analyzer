@@ -2,7 +2,9 @@ import { useState } from "react";
 import { Play, Upload } from "lucide-react";
 import api from "../services/api";
 import { useBacktest } from "../context/BacktestContext";
+import { useAuth } from "../context/AuthContext";
 function StrategyForm() {
+  const maxCsvSizeMb = Number(import.meta.env.VITE_MAX_CSV_SIZE_MB) || 100;
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [csvFile, setCsvFile] = useState(null);
@@ -10,6 +12,7 @@ function StrategyForm() {
   const [uploading, setUploading] = useState(false);
   const [notice, setNotice] = useState("");
   const { setBacktest } = useBacktest();
+  const { user } = useAuth();
   const [strategy, setStrategy] = useState({
     fastEMA: 50,
     slowEMA: 200,
@@ -40,49 +43,94 @@ function StrategyForm() {
       [name]: type === "checkbox" ? checked : value,
     }));
   };
+  const performUpload = async (file) => {
+    if (!file) {
+      setNotice(`Choose a CSV file (.csv, up to ${maxCsvSizeMb} MB).`);
+      return null;
+    }
+
+    if (file.size > maxCsvSizeMb * 1024 * 1024) {
+      setNotice(`The CSV must be ${maxCsvSizeMb} MB or smaller.`);
+      return null;
+    }
+
+    try {
+      setUploading(true);
+      setNotice("Uploading CSV file...");
+      const formData = new FormData();
+      formData.append("csv", file);
+
+      const response = await api.post("/strategy/upload", formData);
+      setCsvPath(response.data.filepath);
+      setNotice(`${file.name} uploaded successfully.`);
+      return response.data.filepath;
+    } catch (err) {
+      console.error(err);
+      setNotice(err.response?.data?.message || err.response?.data?.error || err.message || "CSV upload failed. Please try again.");
+      return null;
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const uploadCSV = async () => {
-  if (!csvFile) {
-    setNotice("Choose a CSV file (.csv, up to 25 MB).");
-    return;
-  }
+    await performUpload(csvFile);
+  };
 
-  try {
-    setUploading(true);
-    setNotice("");
-    const formData = new FormData();
-    formData.append("csv", csvFile);
-
-    const response = await api.post("/strategy/upload", formData);
-
-    setCsvPath(response.data.filepath);
-    setNotice(`${csvFile.name} uploaded successfully.`);
-
-  } catch (err) {
-    console.error(err);
-    setNotice(err.response?.data?.message || err.response?.data?.error || err.message || "CSV upload failed. Please try again.");
-  } finally {
-    setUploading(false);
-  }
-};
   const runStrategy = async () => {
     try {
-        setLoading(true);
+      setLoading(true);
+      setNotice("");
 
-        if (!csvPath) {
-    setNotice("Upload a CSV file before running the strategy.");
-    setLoading(false);
-    return;
-  }
+      let activeCsvPath = csvPath;
+      if (!activeCsvPath) {
+        if (!csvFile) {
+          setNotice("Choose or upload a CSV file before running the strategy.");
+          setLoading(false);
+          return;
+        }
 
-  const response = await api.post("/strategy/run", {
-    ...strategy,
-    csvPath,
-  });
+        activeCsvPath = await performUpload(csvFile);
+        if (!activeCsvPath) {
+          setLoading(false);
+          return;
+        }
+      }
 
-    setResult(response.data);
-    setNotice(response.data.historyMessage || (response.data.historySaved ? "Backtest completed and saved to your history." : "Backtest completed. Sign in to save this run to your history."));
+      setNotice("Running backtest...");
+      const response = await api.post("/strategy/run", {
+        ...strategy,
+        csvPath: activeCsvPath,
+      });
 
-    setBacktest({ ...response.data, rr: strategy.rr });
+      setResult(response.data);
+      setNotice(response.data.historyMessage || (response.data.historySaved ? "Backtest completed and saved to your history." : "Backtest completed. Sign in to save this run to your history."));
+
+      setBacktest({ ...response.data, rr: strategy.rr });
+
+      try {
+        const historyKey = user?.uid ? `xau_history_${user.uid}` : "xau_history_guest";
+        const existing = JSON.parse(localStorage.getItem(historyKey) || "[]");
+        const newRun = {
+          _id: Date.now().toString(),
+          createdAt: new Date().toISOString(),
+          signal: response.data.signal,
+          entry: response.data.entry,
+          stopLoss: response.data.stopLoss,
+          target: response.data.target,
+          accuracy: response.data.accuracy,
+          wins: response.data.wins,
+          losses: response.data.losses,
+          trades: response.data.trades,
+          netRR: response.data.netRR,
+          fastEMA: strategy.fastEMA,
+          slowEMA: strategy.slowEMA,
+          rr: strategy.rr,
+        };
+        localStorage.setItem(historyKey, JSON.stringify([newRun, ...existing].slice(0, 50)));
+      } catch (localSaveErr) {
+        console.warn("Could not cache run in local history:", localSaveErr);
+      }
     } catch (error) {
       console.error(error);
       setNotice(error.response?.data?.message || error.response?.data?.error || error.message || "The backtest could not be completed. Check your connection and try again.");
@@ -315,7 +363,7 @@ function StrategyForm() {
     }}
     className="w-full rounded-lg border border-slate-700 bg-slate-950/70 p-2 text-sm text-slate-300 file:mr-3 file:rounded-md file:border-0 file:bg-slate-800 file:px-3 file:py-2 file:text-slate-100"
   />
-  <span id="csv-help" className="text-xs text-slate-500">Select a CSV file with your candle data.</span>
+  <span id="csv-help" className="text-xs text-slate-500">Select a CSV file with your candle data (up to {maxCsvSizeMb} MB).</span>
   <span id="csv-status" role="status" aria-live="polite" className={notice ? "text-sm text-amber-200" : "sr-only"}>{notice}</span>
 
   <button

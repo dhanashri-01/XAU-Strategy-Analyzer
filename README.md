@@ -58,7 +58,7 @@ The API defaults to `http://localhost:5000/api`. Set `VITE_API_URL` in `frontend
 3. Configure the strategy and choose **Run Strategy**.
 4. Sign in if you want the results saved to your account’s history.
 
-The CSV must contain timestamp, `Open`, `High`, `Low`, and `Close` columns. Supported timestamp names include `Time (EET)`, `Time`, `Date`, `Datetime`, and `Timestamp`. `Volume` is optional. Timestamps must be parseable by pandas; timestamps without a timezone are interpreted as Europe/Helsinki time. CSV uploads are limited to 25 MB and stored under `backend/uploads/`.
+The CSV must contain timestamp, `Open`, `High`, `Low`, and `Close` columns. Supported timestamp names include `Time (EET)`, `Time`, `Date`, `Datetime`, and `Timestamp`. `Volume` is optional. Timestamps must be parseable by pandas; timestamps without a timezone are interpreted as Europe/Helsinki time. CSV uploads are stored under `backend/uploads/` and limited by `MAX_CSV_SIZE_MB` in `backend/.env` (default is 100 MB).
 
 ## Useful commands
 

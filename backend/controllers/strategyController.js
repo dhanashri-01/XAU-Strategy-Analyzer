@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+const mongoose = require("mongoose");
 const runPython = require("../services/pythonRunner");
 const History = require("../models/History");
 
@@ -24,10 +25,12 @@ const runStrategy = async (req, res) => {
       return res.status(400).json({ success: false, message: "Upload a CSV file before running the strategy." });
     }
 
-    const csvPath = path.resolve(submittedPath);
-    if (path.dirname(csvPath) !== uploadsDirectory || path.extname(csvPath).toLowerCase() !== ".csv") {
+    const filename = path.basename(submittedPath.trim());
+    if (!filename || path.extname(filename).toLowerCase() !== ".csv") {
       return res.status(400).json({ success: false, message: "The selected CSV is invalid. Upload it again." });
     }
+
+    const csvPath = path.join(uploadsDirectory, filename);
     if (!fs.existsSync(csvPath)) {
       return res.status(400).json({ success: false, message: "The uploaded CSV could not be found. Upload it again." });
     }
@@ -38,41 +41,45 @@ const runStrategy = async (req, res) => {
     let historyMessage = "Sign in to save this run to your history.";
 
     if (req.user?.uid) {
-      try {
-        await History.create({
-          userId: req.user.uid,
-          slowEMA: Number(settings.slowEMA),
-          londonStart: settings.londonStart,
-          londonEnd: settings.londonEnd,
-          newYorkStart: settings.newYorkStart,
-          newYorkEnd: settings.newYorkEnd,
-          trendFilter: Boolean(settings.trendFilter),
-          confirmation: Boolean(settings.confirmation),
-          fib618: Boolean(settings.fib618),
-          bullish: Boolean(settings.bullish),
-          bearish: Boolean(settings.bearish),
-          fastEMA: Number(settings.fastEMA),
-          minCandles: Number(settings.minCandles),
-          fibLevel: Number(settings.fibLevel),
-          slRatio: Number(settings.slRatio),
-          rr: Number(settings.rr),
-          signal: result.signal,
-          entry: result.entry,
-          stopLoss: result.stopLoss,
-          target: result.target,
-          accuracy: result.accuracy,
-          wins: result.wins,
-          losses: result.losses,
-          trades: result.trades,
-          netRR: result.netRR,
-          equityCurve: result.equityCurve || [],
-          tradeLog: result.tradeLog || [],
-        });
-        historySaved = true;
-        historyMessage = "Run saved to your history.";
-      } catch (historyError) {
-        console.error("Backtest completed, but history could not be saved:", historyError.message);
-        historyMessage = "Run completed, but history could not be saved. Check the database connection.";
+      if (mongoose.connection.readyState === 1) {
+        try {
+          await History.create({
+            userId: req.user.uid,
+            slowEMA: Number(settings.slowEMA),
+            londonStart: settings.londonStart,
+            londonEnd: settings.londonEnd,
+            newYorkStart: settings.newYorkStart,
+            newYorkEnd: settings.newYorkEnd,
+            trendFilter: Boolean(settings.trendFilter),
+            confirmation: Boolean(settings.confirmation),
+            fib618: Boolean(settings.fib618),
+            bullish: Boolean(settings.bullish),
+            bearish: Boolean(settings.bearish),
+            fastEMA: Number(settings.fastEMA),
+            minCandles: Number(settings.minCandles),
+            fibLevel: Number(settings.fibLevel),
+            slRatio: Number(settings.slRatio),
+            rr: Number(settings.rr),
+            signal: result.signal,
+            entry: result.entry,
+            stopLoss: result.stopLoss,
+            target: result.target,
+            accuracy: result.accuracy,
+            wins: result.wins,
+            losses: result.losses,
+            trades: result.trades,
+            netRR: result.netRR,
+            equityCurve: result.equityCurve || [],
+            tradeLog: result.tradeLog || [],
+          });
+          historySaved = true;
+          historyMessage = "Run saved to your history.";
+        } catch (historyError) {
+          console.error("Backtest completed, but history could not be saved:", historyError.message);
+          historyMessage = "Run completed, but history could not be saved. Check database connection.";
+        }
+      } else {
+        historyMessage = "Run completed. History was not saved because MongoDB is offline.";
       }
     }
 
@@ -85,4 +92,3 @@ const runStrategy = async (req, res) => {
 };
 
 module.exports = { uploadCSV, runStrategy };
-

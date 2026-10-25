@@ -9,10 +9,11 @@ router.get("/", (_req, res) => res.send("Strategy API Working"));
 router.post("/upload", (req, res, next) => {
   upload.single("csv")(req, res, (error) => {
     if (error) {
+      const maxMb = upload.maxSizeMB || 100;
       return res.status(400).json({
         success: false,
         message: error.code === "LIMIT_FILE_SIZE"
-          ? "The CSV must be 25 MB or smaller."
+          ? `The CSV must be ${maxMb} MB or smaller.`
           : error.message || "CSV upload failed.",
       });
     }
