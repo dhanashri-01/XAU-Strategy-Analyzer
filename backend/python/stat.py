@@ -293,14 +293,14 @@ net_profit = sum(trades)
 
 output = {
     "signal": last_direction.upper() if last_direction else "NO SIGNAL",
-    "entry": last_entry,
-    "stopLoss": last_sl,
-    "target": last_tp,
+    "entry": round(float(last_entry), 2) if last_entry is not None else None,
+    "stopLoss": round(float(last_sl), 2) if last_sl is not None else None,
+    "target": round(float(last_tp), 2) if last_tp is not None else None,
     "accuracy": round(win_rate, 2),
     "wins": wins,
     "losses": losses,
     "trades": total_trades,
-    "netRR": net_profit,
+    "netRR": round(float(net_profit), 2) if isinstance(net_profit, (int, float)) else net_profit,
 
     "equityCurve": [],     # we'll populate this
     "tradeLog": []         # we'll populate this

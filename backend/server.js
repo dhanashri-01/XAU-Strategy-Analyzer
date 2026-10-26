@@ -9,6 +9,7 @@ const connectDB = require("./config/db");
 const historyRoutes = require("./routes/historyRoutes");
 const strategyRoutes = require("./routes/strategyRoutes");
 const userRoutes = require("./routes/userRoutes");
+const signalRoutes = require("./routes/signalRoutes");
 
 const app = express();
 
@@ -24,6 +25,7 @@ app.get("/", (req, res) => {
 app.use("/api/strategy", strategyRoutes);
 app.use("/api/history", historyRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/signals", signalRoutes);
 
 const PORT = process.env.PORT || 5000;
 

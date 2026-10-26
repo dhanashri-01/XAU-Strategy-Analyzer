@@ -3,6 +3,16 @@ import { Play, Upload } from "lucide-react";
 import api from "../services/api";
 import { useBacktest } from "../context/BacktestContext";
 import { useAuth } from "../context/AuthContext";
+const formatPrice = (value) => {
+  if (value === null || value === undefined || value === "") return "-";
+  const num = Number(value);
+  if (Number.isNaN(num)) return String(value);
+  return num.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+};
+
 function StrategyForm() {
   const maxCsvSizeMb = Number(import.meta.env.VITE_MAX_CSV_SIZE_MB) || 100;
   const [loading, setLoading] = useState(false);
@@ -145,7 +155,10 @@ function StrategyForm() {
       <h2 className="mb-2 text-xl font-semibold text-white sm:text-2xl">
         Strategy Builder
       </h2>
-      <p className="mb-7 text-sm text-slate-400">Choose your settings and upload candle data. Sign-in is optional; sign in only if you want to save the run to your history.</p>
+      <p className="mb-7 text-sm text-slate-400">
+        No account needed. Upload your candle data CSV, tune the parameters, and run a backtest instantly.
+        {" "}<span className="text-slate-500">Sign in only to save runs to your history.</span>
+      </p>
 
       {/* EMA */}
 
@@ -408,19 +421,19 @@ function StrategyForm() {
               <dd className="text-lg font-semibold text-emerald-300">{result.signal}</dd>
             </div>
 
-            <div>
+            <div className="min-w-0">
               <dt className="text-sm text-slate-400">Entry</dt>
-              <dd>{result.entry}</dd>
+              <dd className="truncate font-semibold text-white">{formatPrice(result.entry)}</dd>
             </div>
 
-            <div>
+            <div className="min-w-0">
               <dt className="text-sm text-slate-400">Stop Loss</dt>
-              <dd className="text-rose-300">{result.stopLoss}</dd>
+              <dd className="truncate font-semibold text-rose-300">{formatPrice(result.stopLoss)}</dd>
             </div>
 
-            <div>
+            <div className="min-w-0">
               <dt className="text-sm text-slate-400">Target</dt>
-              <dd className="text-emerald-300">{result.target}</dd>
+              <dd className="truncate font-semibold text-emerald-300">{formatPrice(result.target)}</dd>
             </div>
 
             <div>
