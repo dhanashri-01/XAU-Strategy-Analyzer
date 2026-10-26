@@ -60,6 +60,12 @@ The API defaults to `http://localhost:5000/api`. Set `VITE_API_URL` in `frontend
 
 The CSV must contain timestamp, `Open`, `High`, `Low`, and `Close` columns. Supported timestamp names include `Time (EET)`, `Time`, `Date`, `Datetime`, and `Timestamp`. `Volume` is optional. Timestamps must be parseable by pandas; timestamps without a timezone are interpreted as Europe/Helsinki time. CSV uploads are stored under `backend/uploads/` and limited by `MAX_CSV_SIZE_MB` in `backend/.env` (default is 100 MB).
 
+### Strategy settings and results
+
+The Strategy Builder lets you set fast and slow EMA values, London and New York session hours, the minimum run of same-direction candles for a block, Fibonacci entry and stop ratios, and the reward-to-risk multiplier. Optional filters control EMA trend alignment, the next-candle confirmation, the 0.618 close condition, and whether bullish or bearish blocks are enabled. Session hours are evaluated in Europe/London time. Timestamps are normalized to Europe/Helsinki first and then converted to Europe/London, including daylight-saving changes.
+
+The backtest groups consecutive bullish or bearish candles into blocks, calculates entry, stop-loss, and target levels from each block's high and low, then looks for an entry touch and evaluates stop or target hits within that date. A successful target contributes `+2` to net RR and a stop contributes `-1`. The result includes the latest signal levels and aggregate trade count, wins, losses, accuracy, and net RR. Runs can be performed without signing in; signing in enables saving the run to MongoDB history when the database is available.
+
 ## Useful commands
 
 Run these from `frontend/`:
