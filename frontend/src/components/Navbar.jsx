@@ -31,7 +31,7 @@ function Navbar() {
       <header
         className="sticky top-0 z-30 flex min-h-16 items-center justify-between gap-3 border-b border-slate-800/80 bg-slate-950/90 backdrop-blur
           /* Leave room for hamburger on mobile */
-          pl-16 pr-4 sm:pl-16 sm:pr-6 lg:pl-6 lg:pr-10"
+          pl-16 pr-4 sm:pl-16 sm:pr-6 lg:pl-16 lg:pr-10"
       >
         {/* Left — page title */}
         <div className="min-w-0">
